@@ -19,7 +19,7 @@ import { useQuery, useMutation } from "convex/react";
 // @ts-ignore
 import { api } from "../convex/_generated/api";
 // @ts-ignore
-import { Id } from "../convex/_generated/dataModel";
+import type { Id } from "../convex/_generated/dataModel";
 import './App.css';
 
 const DEFAULT_HTML = `
