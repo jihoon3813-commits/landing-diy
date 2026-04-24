@@ -15,10 +15,13 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import html2canvas from 'html2canvas';
+import { useQuery, useMutation } from "convex/react";
+import { api } from "../convex/_generated/api";
+import { Id } from "../convex/_generated/dataModel";
 import './App.css';
 
 interface LandingProject {
-  id: string;
+  _id: Id<"projects">;
   title: string;
   html: string;
   css: string;
@@ -71,18 +74,19 @@ p { font-size: 1.25rem; opacity: 0.9; margin-bottom: 2rem; }
 `;
 
 export default function App() {
-  const [projects, setProjects] = useState<LandingProject[]>(() => {
-    const saved = localStorage.getItem('landing-diy-projects');
-    return saved ? JSON.parse(saved) : [];
-  });
-  const [activeId, setActiveId] = useState<string | null>(projects[0]?.id || null);
+  const projects = useQuery(api.projects.get) || [];
+  const createProject = useMutation(api.projects.create);
+  const updateProjectMutation = useMutation(api.projects.update);
+  const removeProject = useMutation(api.projects.remove);
+
+  const [activeId, setActiveId] = useState<Id<"projects"> | null>(null);
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [editorWidth, setEditorWidth] = useState(50); // Percentage
   const [isResizing, setIsResizing] = useState(false);
   
-  const activeProject = projects.find(p => p.id === activeId);
+  const activeProject = projects.find(p => p._id === activeId);
   const previewRef = useRef<HTMLIFrameElement>(null);
 
   const startResizing = () => setIsResizing(true);
@@ -108,31 +112,27 @@ export default function App() {
     };
   }, [isResizing]);
 
-  useEffect(() => {
-    localStorage.setItem('landing-diy-projects', JSON.stringify(projects));
-  }, [projects]);
-
-  const createNewProject = () => {
-    const newProject: LandingProject = {
-      id: Date.now().toString(),
+  const handleCreate = async () => {
+    const id = await createProject({
       title: '새로운 랜딩페이지',
       html: DEFAULT_HTML,
       css: DEFAULT_CSS,
       js: '',
-      updatedAt: Date.now()
-    };
-    setProjects([newProject, ...projects]);
-    setActiveId(newProject.id);
+    });
+    setActiveId(id);
   };
 
-  const updateProject = (id: string, updates: Partial<LandingProject>) => {
-    setProjects(projects.map(p => p.id === id ? { ...p, ...updates, updatedAt: Date.now() } : p));
+  const handleUpdate = (updates: Partial<LandingProject>) => {
+    if (!activeId) return;
+    updateProjectMutation({
+      id: activeId,
+      ...updates
+    });
   };
 
-  const deleteProject = (id: string) => {
+  const handleDelete = async (id: Id<"projects">) => {
     if (confirm('정말 삭제하시겠습니까?')) {
-      const updated = projects.filter(p => p.id !== id);
-      setProjects(updated);
+      await removeProject({ id });
       if (activeId === id) setActiveId(null);
     }
   };
@@ -204,7 +204,7 @@ export default function App() {
             <Code2 className="violet-icon" style={{ color: '#8b5cf6' }} />
             <span>랜딩 DIY</span>
           </div>
-          <button onClick={createNewProject} className="add-btn">
+          <button onClick={handleCreate} className="add-btn">
             <Plus size={18} />
           </button>
         </div>
@@ -225,16 +225,16 @@ export default function App() {
         <div className="project-list">
           {filteredProjects.map(p => (
             <div 
-              key={p.id}
-              onClick={() => setActiveId(p.id)}
-              className={`project-item ${activeId === p.id ? 'active' : ''}`}
+              key={p._id}
+              onClick={() => setActiveId(p._id)}
+              className={`project-item ${activeId === p._id ? 'active' : ''}`}
             >
               <div className="project-info">
                 <span className="project-name">{p.title}</span>
                 <span className="project-date">{new Date(p.updatedAt).toLocaleDateString()}</span>
               </div>
               <button 
-                onClick={(e) => { e.stopPropagation(); deleteProject(p.id); }}
+                onClick={(e) => { e.stopPropagation(); handleDelete(p._id); }}
                 className="delete-btn"
               >
                 <Trash2 size={14} />
@@ -260,7 +260,7 @@ export default function App() {
                 <input 
                   type="text" 
                   value={activeProject.title}
-                  onChange={(e) => updateProject(activeProject.id, { title: e.target.value })}
+                  onChange={(e) => handleUpdate({ title: e.target.value })}
                   className="title-input"
                 />
               </div>
@@ -312,7 +312,7 @@ export default function App() {
                     defaultLanguage="html"
                     theme="vs-dark"
                     value={activeProject.html}
-                    onChange={(val) => updateProject(activeProject.id, { html: val || '' })}
+                    onChange={(val) => handleUpdate({ html: val || '' })}
                     options={{ 
                       minimap: { enabled: false }, 
                       fontSize: 13,
@@ -330,7 +330,7 @@ export default function App() {
                     defaultLanguage="css"
                     theme="vs-dark"
                     value={activeProject.css}
-                    onChange={(val) => updateProject(activeProject.id, { css: val || '' })}
+                    onChange={(val) => handleUpdate({ css: val || '' })}
                     options={{ 
                       minimap: { enabled: false }, 
                       fontSize: 13,
@@ -376,9 +376,9 @@ export default function App() {
             </div>
             <div>
               <h3 className="empty-title">프로젝트를 선택하거나 새로 만드세요</h3>
-              <p className="empty-desc">직접 코딩하여 맞춤형 랜딩페이지를 제작할 수 있습니다.</p>
+              <p className="empty-desc">Convex 실시간 백엔드로 데이터가 안전하게 저장됩니다.</p>
             </div>
-            <button onClick={createNewProject} className="start-btn">
+            <button onClick={handleCreate} className="start-btn">
               <Plus size={20} />
               새 프로젝트 시작
             </button>
