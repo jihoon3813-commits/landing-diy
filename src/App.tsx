@@ -79,9 +79,34 @@ export default function App() {
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [editorWidth, setEditorWidth] = useState(50); // Percentage
+  const [isResizing, setIsResizing] = useState(false);
   
   const activeProject = projects.find(p => p.id === activeId);
   const previewRef = useRef<HTMLIFrameElement>(null);
+
+  const startResizing = () => setIsResizing(true);
+  const stopResizing = () => setIsResizing(false);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing) return;
+      const newWidth = (e.clientX / window.innerWidth) * 100;
+      if (newWidth > 10 && newWidth < 90) {
+        setEditorWidth(newWidth);
+      }
+    };
+
+    if (isResizing) {
+      window.addEventListener('mousemove', handleMouseMove);
+      window.addEventListener('mouseup', stopResizing);
+    }
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', stopResizing);
+    };
+  }, [isResizing]);
 
   useEffect(() => {
     localStorage.setItem('landing-diy-projects', JSON.stringify(projects));
@@ -274,7 +299,10 @@ export default function App() {
             </header>
 
             <div className="workspace">
-              <div className="editor-pane">
+              <div 
+                className="editor-pane"
+                style={{ width: `${editorWidth}%` }}
+              >
                 <div className="editor-section">
                   <div className="editor-label">
                     <span style={{ color: '#fb923c' }}>HTML</span>
@@ -313,7 +341,13 @@ export default function App() {
                 </div>
               </div>
 
+              <div 
+                className={`resizer ${isResizing ? 'dragging' : ''}`} 
+                onMouseDown={startResizing}
+              />
+
               <div className="preview-pane">
+                {isResizing && <div style={{ position: 'absolute', inset: 0, zIndex: 5 }} />}
                 <motion.div 
                   layout
                   className="preview-container"
