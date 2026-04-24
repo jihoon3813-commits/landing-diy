@@ -22,15 +22,6 @@ import { api } from "../convex/_generated/api";
 import { Id } from "../convex/_generated/dataModel";
 import './App.css';
 
-interface LandingProject {
-  _id: Id<"projects">;
-  title: string;
-  html: string;
-  css: string;
-  js: string;
-  updatedAt: number;
-}
-
 const DEFAULT_HTML = `
 <div class="hero">
   <h1>새로운 상품 출시!</h1>
