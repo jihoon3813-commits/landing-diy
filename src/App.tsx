@@ -354,7 +354,9 @@ export default function App() {
                   style={{ 
                     width: viewMode === 'desktop' ? '100%' : viewMode === 'tablet' ? '768px' : '375px',
                     height: viewMode === 'desktop' ? '100%' : '80%',
-                    maxWidth: '100%'
+                    maxWidth: '100%',
+                    borderRadius: viewMode === 'desktop' ? '0' : '12px',
+                    boxShadow: viewMode === 'desktop' ? 'none' : undefined
                   }}
                 >
                   <iframe 

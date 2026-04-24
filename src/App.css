@@ -307,13 +307,14 @@
 }
 
 .preview-pane {
-  width: 50%;
+  flex: 1;
   background-color: #0f1117;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 2rem;
-  overflow: auto;
+  overflow: hidden;
+  min-width: 200px;
+  position: relative;
 }
 
 .preview-container {
@@ -322,7 +323,6 @@
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
   overflow: hidden;
   position: relative;
-  transition: width 0.3s ease;
 }
 
 .preview-iframe {
