@@ -72,7 +72,10 @@ export default function App() {
   const updateProjectMutation = useMutation(api.projects.update);
   const removeProject = useMutation(api.projects.remove);
 
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(() => {
+    return localStorage.getItem('landing-diy-active-id');
+  });
+  const [saveStatus, setSaveStatus] = useState<'saved' | 'saving'>('saved');
   const [viewMode, setViewMode] = useState<'desktop' | 'tablet' | 'mobile'>('desktop');
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -105,6 +108,12 @@ export default function App() {
     };
   }, [isResizing]);
 
+  useEffect(() => {
+    if (activeId) {
+      localStorage.setItem('landing-diy-active-id', activeId);
+    }
+  }, [activeId]);
+
   const handleCreate = async () => {
     const id = await createProject({
       title: '새로운 랜딩페이지',
@@ -117,10 +126,23 @@ export default function App() {
 
   const handleUpdate = (updates: Partial<any>) => {
     if (!activeId) return;
+    setSaveStatus('saving');
     updateProjectMutation({
       id: activeId as any,
       ...updates
+    }).then(() => {
+      setSaveStatus('saved');
     });
+  };
+
+  const handleDuplicate = async (project: any) => {
+    const id = await createProject({
+      title: `${project.title} (복사본)`,
+      html: project.html,
+      css: project.css,
+      js: project.js,
+    });
+    setActiveId(id);
   };
 
   const handleDelete = async (id: string) => {
@@ -226,12 +248,22 @@ export default function App() {
                 <span className="project-name">{p.title}</span>
                 <span className="project-date">{new Date(p.updatedAt).toLocaleDateString()}</span>
               </div>
-              <button 
-                onClick={(e) => { e.stopPropagation(); handleDelete(p._id); }}
-                className="delete-btn"
-              >
-                <Trash2 size={14} />
-              </button>
+              <div className="project-actions" style={{ display: 'flex', gap: '4px' }}>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleDuplicate(p); }}
+                  className="icon-btn"
+                  title="복제"
+                  style={{ opacity: 0, padding: '4px', color: '#94a3b8' }}
+                >
+                  <Plus size={14} />
+                </button>
+                <button 
+                  onClick={(e) => { e.stopPropagation(); handleDelete(p._id); }}
+                  className="delete-btn"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
             </div>
           ))}
         </div>
@@ -256,6 +288,9 @@ export default function App() {
                   onChange={(e) => handleUpdate({ title: e.target.value })}
                   className="title-input"
                 />
+                <span className={`save-badge ${saveStatus}`}>
+                  {saveStatus === 'saving' ? '저장 중...' : '저장됨'}
+                </span>
               </div>
 
               <div className="view-toggles">
