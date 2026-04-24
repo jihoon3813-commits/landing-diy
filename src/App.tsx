@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import { 
   Monitor, 
@@ -13,7 +13,7 @@ import {
   ChevronRight,
   Search
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import html2canvas from 'html2canvas';
 import './App.css';
 
